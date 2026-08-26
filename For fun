@@ -1,0 +1,103 @@
+import math
+import random
+import tkinter as tk
+
+class IceBlackHole:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Cyan & White Supernova Hole")
+        self.width, self.height = 800, 600
+        self.center_x, self.center_y = 400, 300
+        
+        # Bright light-cyan/blue background
+        self.canvas = tk.Canvas(root, width=self.width, height=self.height, bg="#d8f0ff", highlightthickness=0)
+        self.canvas.pack(fill="both", expand=True)
+
+        self.num_particles = 850
+        self.particles = []
+
+        # 1. Soft Blue Radial Rays in Background
+        for i in range(16):
+            angle = (i / 16) * 2 * math.pi
+            x2 = self.center_x + math.cos(angle) * 380
+            y2 = self.center_y + math.sin(angle) * 380
+            self.canvas.create_line(self.center_x, self.center_y, x2, y2, fill="#b5e2ff", width=2)
+
+        # 2. Particles Swarm (Varying between deep blue, cyan, and bright white)
+        for i in range(self.num_particles):
+            angle = (i / self.num_particles) * 2 * math.pi * 7
+            radius = 56 + (i / self.num_particles) ** 1.1 * 270
+            speed = 0.012 + (1.4 / (radius * 0.07))
+            size = max(1, int(4.5 - (radius / 90)))
+            
+            item = self.canvas.create_oval(0, 0, 0, 0, fill="#ffffff", outline="")
+            self.particles.append({
+                'id': item,
+                'angle': angle,
+                'radius': radius,
+                'speed': speed,
+                'size': size,
+                'phase': random.uniform(0, math.pi * 2)
+            })
+
+        # 3. Dynamic Core Rings (Soft Blue & Cyan Glows)
+        self.outer_glow = self.canvas.create_oval(0, 0, 0, 0, outline="#8bcaff", width=12)
+        self.mid_glow = self.canvas.create_oval(0, 0, 0, 0, outline="#3399ff", width=6)
+        self.photon_ring = self.canvas.create_oval(0, 0, 0, 0, outline="#0044cc", width=2)
+        
+        # Pure White Center Core
+        self.event_horizon = self.canvas.create_oval(
+            self.center_x - 52, self.center_y - 52, 
+            self.center_x + 52, self.center_y + 52, 
+            fill="#ffffff", outline=""
+        )
+
+        self.time = 0
+        self.animate()
+
+    def animate(self):
+        self.time += 0.04
+        
+        # --- Animate Pulsing Core Rings ---
+        pulse = math.sin(self.time * 2) * 4
+        
+        r1 = 70 + pulse
+        self.canvas.coords(self.outer_glow, self.center_x - r1, self.center_y - r1, self.center_x + r1, self.center_y + r1)
+        
+        r2 = 62 + (pulse * 0.5)
+        self.canvas.coords(self.mid_glow, self.center_x - r2, self.center_y - r2, self.center_x + r2, self.center_y + r2)
+        
+        r3 = 55 + (pulse * 0.2)
+        self.canvas.coords(self.photon_ring, self.center_x - r3, self.center_y - r3, self.center_x + r3, self.center_y + r3)
+
+        # --- Animate Swirling Particles with Gravitational Lensing ---
+        for p in self.particles:
+            p['angle'] += p['speed'] * 0.8
+            
+            raw_x = math.cos(p['angle']) * p['radius']
+            raw_y = math.sin(p['angle']) * p['radius']
+            
+            dist_to_center = math.sqrt(raw_x**2 + raw_y**2)
+            lens_factor = 1.0 + (35.0 / max(dist_to_center, 40)) * (abs(raw_y) / dist_to_center)
+            
+            x = self.center_x + raw_x * lens_factor
+            y = self.center_y + raw_y
+            
+            # Particle color shifting between blue shades and pure white
+            doppler = -math.sin(p['angle'])
+            red = int(max(0, min(255, 50 + doppler * 100)))
+            green = int(max(100, min(255, 150 + doppler * 80)))
+            blue = int(max(200, min(255, 230 + doppler * 25)))
+            
+            color_hex = f"#{red:02x}{green:02x}{blue:02x}"
+            
+            r = p['size']
+            self.canvas.coords(p['id'], x - r, y - r, x + r, y + r)
+            self.canvas.itemconfigure(p['id'], fill=color_hex)
+
+        self.root.after(16, self.animate)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = IceBlackHole(root)
+    root.mainloop()
